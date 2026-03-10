@@ -1,0 +1,266 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Traffic Signal Simulation</title>
+
+  <style>
+    /* 5.1 Usability - Simple & Clear UI */
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      font-family: Arial, sans-serif;
+    }
+
+    body {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      min-height: 100vh;
+      background: #f2f4f7;
+      text-align: center;
+    }
+
+    h1 {
+      margin-bottom: 20px;
+    }
+
+    /* 6.1 Layout Design - Vertical Signal Container */
+    .signal-container {
+      background: #222;
+      padding: 20px;
+      border-radius: 20px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 15px;
+      width: 130px;
+      box-shadow: 0 10px 25px rgba(0, 0, 0, 0.2);
+    }
+
+    /* 4.1.2 Circular UI Elements */
+    .light {
+      width: 75px;
+      height: 75px;
+      border-radius: 50%;
+      background: #444;
+      opacity: 0.3;
+      transition: all 0.4s ease; /* 5.2 Smooth transitions */
+    }
+
+    /* 6.2 Visual Styling - Real Signal Colors */
+    .light.red.active {
+      background: red;
+      opacity: 1;
+      box-shadow: 0 0 20px red;
+    }
+
+    .light.yellow.active {
+      background: yellow;
+      opacity: 1;
+      box-shadow: 0 0 20px yellow;
+    }
+
+    .light.green.active {
+      background: limegreen;
+      opacity: 1;
+      box-shadow: 0 0 20px limegreen;
+    }
+
+    /* Buttons Layout (6.1.2) */
+    .controls {
+      margin-top: 20px;
+      display: flex;
+      gap: 12px;
+      flex-wrap: wrap;
+      justify-content: center;
+    }
+
+    button {
+      padding: 10px 18px;
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+      font-size: 14px;
+      font-weight: bold;
+      transition: 0.2s ease;
+    }
+
+    .start-btn {
+      background: #28a745;
+      color: white;
+    }
+
+    .stop-btn {
+      background: #dc3545;
+      color: white;
+    }
+
+    button:hover {
+      transform: scale(1.05);
+    }
+
+    /* 4.5 Status Display */
+    .status {
+      margin-top: 15px;
+      font-size: 18px;
+      font-weight: bold;
+      color: #333;
+    }
+
+    /* 5.3 Compatibility - Responsive Design */
+    @media (max-width: 480px) {
+      .signal-container {
+        width: 110px;
+        padding: 15px;
+      }
+
+      .light {
+        width: 60px;
+        height: 60px;
+      }
+    }
+  </style>
+</head>
+
+<body>
+
+  <h1>Traffic Signal Simulation</h1>
+
+  <!-- 4.1 Signal Display Module -->
+  <div class="signal-container" id="signalContainer">
+    <div id="redLight" class="light red"></div>
+    <div id="yellowLight" class="light yellow"></div>
+    <div id="greenLight" class="light green"></div>
+  </div>
+
+  <!-- 4.5 Status + Countdown -->
+  <div class="status" id="statusText">
+    Current Signal: RED | Time Left: 5s
+  </div>
+
+  <!-- 4.4 User Interaction Buttons -->
+  <div class="controls">
+    <button class="start-btn" id="startBtn">Start Simulation</button>
+    <button class="stop-btn" id="stopBtn">Stop / Reset</button>
+  </div>
+
+  <script>
+    (function () {
+      // 8.1 Error Handling - Check DOM Elements
+      const redLight = document.getElementById("redLight");
+      const yellowLight = document.getElementById("yellowLight");
+      const greenLight = document.getElementById("greenLight");
+      const statusText = document.getElementById("statusText");
+      const startBtn = document.getElementById("startBtn");
+      const stopBtn = document.getElementById("stopBtn");
+
+      if (!redLight || !yellowLight || !greenLight || !statusText) {
+        console.error("Required DOM elements are missing.");
+        return;
+      }
+
+      // 4.2 Signal Timing Control (Fixed Durations)
+      const durations = {
+        red: 5,    // seconds
+        yellow: 2, // seconds
+        green: 4   // seconds
+      };
+
+      let currentSignal = "red"; // TC-02 Default RED ON
+      let timeLeft = durations.red;
+      let countdownInterval = null;
+      let isRunning = false; // 7.2.1 Prevent multiple timers
+
+      // Reset all lights (UI Stability)
+      function resetLights() {
+        redLight.classList.remove("active");
+        yellowLight.classList.remove("active");
+        greenLight.classList.remove("active");
+      }
+
+      // 4.3.3 Update DOM dynamically
+      function updateUI() {
+        resetLights();
+
+        if (currentSignal === "red") {
+          redLight.classList.add("active");
+        } else if (currentSignal === "yellow") {
+          yellowLight.classList.add("active");
+        } else if (currentSignal === "green") {
+          greenLight.classList.add("active");
+        }
+
+        // 4.5.1 Display current signal
+        // 4.5.2 Display countdown timer
+        statusText.textContent =
+          "Current Signal: " +
+          currentSignal.toUpperCase() +
+          " | Time Left: " +
+          timeLeft +
+          "s";
+      }
+
+      // 4.3.2 Conditional Logic for Signal Switching
+      function switchSignal() {
+        if (currentSignal === "red") {
+          currentSignal = "yellow"; // 4.2.2
+          timeLeft = durations.yellow;
+        } else if (currentSignal === "yellow") {
+          currentSignal = "green"; // 4.2.3
+          timeLeft = durations.green;
+        } else {
+          currentSignal = "red"; // 4.2.4 Repeat Cycle
+          timeLeft = durations.red;
+        }
+        updateUI();
+      }
+
+      // 4.4.1 Start Simulation (SV-01 Multiple Timer Prevention)
+      function startSimulation() {
+        if (isRunning) return; // Prevent duplicate timers
+
+        isRunning = true;
+        updateUI();
+
+        // 4.3.1 Using setInterval for timing
+        countdownInterval = setInterval(() => {
+          timeLeft--;
+
+          if (timeLeft <= 0) {
+            switchSignal();
+          } else {
+            updateUI();
+          }
+        }, 1000); // Accurate 1-second countdown (PT-01)
+      }
+
+      // 4.4.2 Stop / Reset Simulation
+      function stopSimulation() {
+        if (countdownInterval !== null) {
+          clearInterval(countdownInterval);
+          countdownInterval = null;
+        }
+
+        isRunning = false;
+
+        // 9.2.1 Reset to default state on refresh/reset
+        currentSignal = "red";
+        timeLeft = durations.red;
+        updateUI();
+      }
+
+      // Event Listeners (7.1.2 Predefined Actions Only)
+      startBtn.addEventListener("click", startSimulation);
+      stopBtn.addEventListener("click", stopSimulation);
+
+      // TC-01 & TC-02 Initial Load (Red ON by default)
+      updateUI();
+    })();
+  </script>
+
+</body>
+</html>
